@@ -1,9 +1,17 @@
 from flask import Flask, render_template, request
-import pickle
-import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+import os
 
 app = Flask(__name__)
-model = pickle.load(open("house_model.pkl", "rb"))
+
+# Yahin par model train hoga (koi .pkl nahi)
+data = pd.read_csv("dataset.csv")
+X = data[['area', 'bedrooms', 'bathrooms']]
+y = data['price']
+
+model = LinearRegression()
+model.fit(X, y)
 
 @app.route("/")
 def home():
@@ -15,9 +23,10 @@ def predict():
     bedrooms = int(request.form["bedrooms"])
     bathrooms = int(request.form["bathrooms"])
 
-    prediction = model.predict([[area, bedrooms, bathrooms]])[0]
-
-    return render_template("result.html", price=f"₹ {int(prediction):,}")
+    price = model.predict([[area, bedrooms, bathrooms]])[0]
+    return render_template("result.html", price=f"₹ {int(price):,}")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
